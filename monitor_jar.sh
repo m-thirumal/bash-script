@@ -1,7 +1,8 @@
 #!/bin/bash
 
 STATE_FILE="/tmp/jar_dynamic_state.state"
-TEAMS_WEBHOOK_URL= "https://default05e1a00f674a436089659e4350e553.44.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2e88b251801241168a686be341dd7f3e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Fm5qTuQgGEyH_XWip-ZFKfIHOPvBSuUuLgplYuqc8Vw"
+#TEAMS_WEBHOOK_URL="https://default05e1a00f674a436089659e4350e553.44.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2e88b251801241168a686be341dd7f3e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Fm5qTuQgGEyH_XWip-ZFKfIHOPvBSuUuLgplYuqc8Vw";
+TEAMS_WEBHOOK_URL="https://default05e1a00f674a436089659e4350e553.44.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/b717512223a54825b2849f17248a2a0e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uWgzRHZsP2Npj0K9lPd4gqXFA81ONbEYVuqWG8zYkaY";
 HOST=$(hostname)
 
 mkdir -p /tmp
@@ -68,12 +69,10 @@ if [ ${#UP_LIST[@]} -eq 0 ] && [ ${#DOWN_LIST[@]} -eq 0 ]; then
 fi
 
 # --- Build Teams message content ---
-MESSAGE="JAR Status Update from *$HOST*:
-
-"
+MESSAGE="JAR Status Update from *$HOST*:\n\n"
 
 if [ ${#UP_LIST[@]} -gt 0 ]; then
-    MESSAGE+="**🟩 Started / UP:**\n"
+    MESSAGE+="🟩 *Started / UP:*\n"
     for jar in "${UP_LIST[@]}"; do
         MESSAGE+="• $jar\n"
     done
@@ -81,14 +80,18 @@ if [ ${#UP_LIST[@]} -gt 0 ]; then
 fi
 
 if [ ${#DOWN_LIST[@]} -gt 0 ]; then
-    MESSAGE+="**🟥 Stopped / DOWN:**\n"
+    MESSAGE+="🟥 *Stopped / DOWN:*\n"
     for jar in "${DOWN_LIST[@]}"; do
         MESSAGE+="• $jar\n"
     done
     MESSAGE+="\n"
 fi
 
-# --- Send one combined message ---
+# Escape newlines for JSON
+ESCAPED_MESSAGE=$(printf "%s" "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g')
+
+# Send one combined message
 curl -s -H "Content-Type: application/json" \
-    -d "{\"text\": \"$MESSAGE\"}" \
+    -d "{\"message\": \"$ESCAPED_MESSAGE\"}" \
     "$TEAMS_WEBHOOK_URL" >/dev/null
+
